@@ -52,6 +52,7 @@
 #include "Client.h"
 #include "Server.h"
 #include "Udp.h"
+#include "SPI.h"
 
 enum EthernetLinkStatus {
 	Unknown,
@@ -70,6 +71,9 @@ class EthernetUDP;
 class EthernetClient;
 class EthernetServer;
 class DhcpClass;
+
+// support for instances other then the default SPI
+extern SPIClass *p_spi_ethernet;
 
 class EthernetClass {
 private:
@@ -90,6 +94,7 @@ public:
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway, IPAddress subnet);
 	static void init(uint8_t sspin = 10);
+	static void setSPI(SPIClass& spi, uint8_t sspin);
 
 	static void MACAddress(uint8_t *mac_address);
 	static IPAddress localIP();
