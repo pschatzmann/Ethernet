@@ -91,10 +91,10 @@ void EthernetClass::begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress g
 	_dnsServerAddress = dns;
 }
 
-void EthernetClass::setSPI(SPIClass& spi, uint8_t sspin, SPISettings settings){
+void EthernetClass::setSPI(SPIClass& spi, int sspin, SPISettings settings){
 	p_spi_ethernet = &spi;
 	spi_ethernet_settings = settings;
-	init(sspin);
+	if (sspin>=0) init(sspin);
 }
 
 
@@ -231,14 +231,6 @@ void EthernetClass::setRetransmissionCount(uint8_t num)
 	W5100.setRetransmissionCount(num);
 	p_spi_ethernet->endTransaction();
 }
-
-
-
-
-
-
-
-
 
 
 EthernetClass Ethernet;
