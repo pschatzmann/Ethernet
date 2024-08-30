@@ -71,7 +71,7 @@ uint8_t EthernetClass::socketBegin(uint8_t protocol, uint16_t port)
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	//Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	// look at all the hardware sockets, use any that are closed (unused)
 	for (s=0; s < maxindex; s++) {
 		status[s] = W5100.readSnSR(s);
@@ -135,7 +135,7 @@ uint8_t EthernetClass::socketBeginMulticast(uint8_t protocol, IPAddress ip, uint
 	if (chip == 51) maxindex = 4; // W5100 chip never supports more than 4 sockets
 #endif
 	//Serial.printf("W5000socket begin, protocol=%d, port=%d\n", protocol, port);
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	// look at all the hardware sockets, use any that are closed (unused)
 	for (s=0; s < maxindex; s++) {
 		status[s] = W5100.readSnSR(s);
@@ -198,7 +198,7 @@ makesocket:
 //
 uint8_t EthernetClass::socketStatus(uint8_t s)
 {
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	uint8_t status = W5100.readSnSR(s);
 	p_spi_ethernet->endTransaction();
 	return status;
@@ -209,7 +209,7 @@ uint8_t EthernetClass::socketStatus(uint8_t s)
 //
 void EthernetClass::socketClose(uint8_t s)
 {
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	W5100.execCmdSn(s, Sock_CLOSE);
 	p_spi_ethernet->endTransaction();
 }
@@ -219,7 +219,7 @@ void EthernetClass::socketClose(uint8_t s)
 //
 uint8_t EthernetClass::socketListen(uint8_t s)
 {
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	if (W5100.readSnSR(s) != SnSR::INIT) {
 		p_spi_ethernet->endTransaction();
 		return 0;
@@ -235,7 +235,7 @@ uint8_t EthernetClass::socketListen(uint8_t s)
 void EthernetClass::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
 {
 	// set destination IP
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	W5100.writeSnDIPR(s, addr);
 	W5100.writeSnDPORT(s, port);
 	W5100.execCmdSn(s, Sock_CONNECT);
@@ -248,7 +248,7 @@ void EthernetClass::socketConnect(uint8_t s, uint8_t * addr, uint16_t port)
 //
 void EthernetClass::socketDisconnect(uint8_t s)
 {
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	W5100.execCmdSn(s, Sock_DISCON);
 	p_spi_ethernet->endTransaction();
 }
@@ -305,7 +305,7 @@ int EthernetClass::socketRecv(uint8_t s, uint8_t *buf, int16_t len)
 {
 	// Check how much data is available
 	int ret = state[s].RX_RSR;
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	if (ret < len) {
 		uint16_t rsr = getSnRX_RSR(s);
 		ret = rsr - state[s].RX_inc;
@@ -351,7 +351,7 @@ uint16_t EthernetClass::socketRecvAvailable(uint8_t s)
 {
 	uint16_t ret = state[s].RX_RSR;
 	if (ret == 0) {
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 		uint16_t rsr = getSnRX_RSR(s);
 		p_spi_ethernet->endTransaction();
 		ret = rsr - state[s].RX_inc;
@@ -366,7 +366,7 @@ uint16_t EthernetClass::socketRecvAvailable(uint8_t s)
 uint8_t EthernetClass::socketPeek(uint8_t s)
 {
 	uint8_t b;
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	uint16_t ptr = state[s].RX_RD;
 	W5100.read((ptr & W5100.SMASK) + W5100.RBASE(s), &b, 1);
 	p_spi_ethernet->endTransaction();
@@ -433,7 +433,7 @@ uint16_t EthernetClass::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
 
 	// if freebuf is available, start.
 	do {
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 		freesize = getSnTX_FSR(s);
 		status = W5100.readSnSR(s);
 		p_spi_ethernet->endTransaction();
@@ -445,7 +445,7 @@ uint16_t EthernetClass::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
 	} while (freesize < ret);
 
 	// copy data
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	write_data(s, 0, (uint8_t *)buf, ret);
 	W5100.execCmdSn(s, Sock_SEND);
 
@@ -458,7 +458,7 @@ uint16_t EthernetClass::socketSend(uint8_t s, const uint8_t * buf, uint16_t len)
 		}
 		p_spi_ethernet->endTransaction();
 		yield();
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	}
 	/* +2008.01 bj */
 	W5100.writeSnIR(s, SnIR::SEND_OK);
@@ -470,7 +470,7 @@ uint16_t EthernetClass::socketSendAvailable(uint8_t s)
 {
 	uint8_t status=0;
 	uint16_t freesize=0;
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	freesize = getSnTX_FSR(s);
 	status = W5100.readSnSR(s);
 	p_spi_ethernet->endTransaction();
@@ -484,7 +484,7 @@ uint16_t EthernetClass::socketBufferData(uint8_t s, uint16_t offset, const uint8
 {
 	//Serial.printf("  bufferData, offset=%d, len=%d\n", offset, len);
 	uint16_t ret =0;
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	uint16_t txfree = getSnTX_FSR(s);
 	if (len > txfree) {
 		ret = txfree; // check size not to exceed MAX size.
@@ -502,7 +502,7 @@ bool EthernetClass::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
 	  ((port == 0x00)) ) {
 		return false;
 	}
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	W5100.writeSnDIPR(s, addr);
 	W5100.writeSnDPORT(s, port);
 	p_spi_ethernet->endTransaction();
@@ -511,7 +511,7 @@ bool EthernetClass::socketStartUDP(uint8_t s, uint8_t* addr, uint16_t port)
 
 bool EthernetClass::socketSendUDP(uint8_t s)
 {
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	W5100.execCmdSn(s, Sock_SEND);
 
 	/* +2008.01 bj */
@@ -525,7 +525,7 @@ bool EthernetClass::socketSendUDP(uint8_t s)
 		}
 		p_spi_ethernet->endTransaction();
 		yield();
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		p_spi_ethernet->beginTransaction(spi_ethernet_settings);
 	}
 
 	/* +2008.01 bj */

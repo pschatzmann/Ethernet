@@ -101,10 +101,10 @@ uint8_t W5100Class::init(void)
 	delay(560);
 	//Serial.println("w5100 init");
 
-	p_spi_ethernet->begin();
+	Ethernet.p_spi_ethernet->begin();
 	initSS();
 	resetSS();
-	p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+	Ethernet.p_spi_ethernet->beginTransaction(Ethernet.spi_ethernet_settings);
 
 	// Attempt W5200 detection first, because W5200 does not properly
 	// reset its SPI state when CS goes high (inactive).  Communication
@@ -189,10 +189,10 @@ uint8_t W5100Class::init(void)
 	} else {
 		//Serial.println("no chip :-(");
 		chip = 0;
-		p_spi_ethernet->endTransaction();
+		Ethernet.p_spi_ethernet->endTransaction();
 		return 0; // no known chip is responding :-(
 	}
-	p_spi_ethernet->endTransaction();
+	Ethernet.p_spi_ethernet->endTransaction();
 	initialized = true;
 	return 1; // successful init
 }
@@ -276,15 +276,15 @@ W5100Linkstatus W5100Class::getLinkStatus()
 	if (!init()) return UNKNOWN;
 	switch (chip) {
 	  case 52:
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		Ethernet.p_spi_ethernet->beginTransaction(Ethernet.spi_ethernet_settings);
 		phystatus = readPSTATUS_W5200();
-		p_spi_ethernet->endTransaction();
+		Ethernet.p_spi_ethernet->endTransaction();
 		if (phystatus & 0x20) return LINK_ON;
 		return LINK_OFF;
 	  case 55:
-		p_spi_ethernet->beginTransaction(SPI_ETHERNET_SETTINGS);
+		Ethernet.p_spi_ethernet->beginTransaction(Ethernet.spi_ethernet_settings);
 		phystatus = readPHYCFGR_W5500();
-		p_spi_ethernet->endTransaction();
+		Ethernet.p_spi_ethernet->endTransaction();
 		if (phystatus & 0x01) return LINK_ON;
 		return LINK_OFF;
 	  default:
@@ -299,11 +299,11 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 	if (chip == 51) {
 		for (uint16_t i=0; i<len; i++) {
 			setSS();
-			p_spi_ethernet->transfer(0xF0);
-			p_spi_ethernet->transfer(addr >> 8);
-			p_spi_ethernet->transfer(addr & 0xFF);
+			Ethernet.p_spi_ethernet->transfer(0xF0);
+			Ethernet.p_spi_ethernet->transfer(addr >> 8);
+			Ethernet.p_spi_ethernet->transfer(addr & 0xFF);
 			addr++;
-			p_spi_ethernet->transfer(buf[i]);
+			Ethernet.p_spi_ethernet->transfer(buf[i]);
 			resetSS();
 		}
 	} else if (chip == 52) {
@@ -312,13 +312,13 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 		cmd[1] = addr & 0xFF;
 		cmd[2] = ((len >> 8) & 0x7F) | 0x80;
 		cmd[3] = len & 0xFF;
-		p_spi_ethernet->transfer(cmd, 4);
+		Ethernet.p_spi_ethernet->transfer(cmd, 4);
 #ifdef SPI_HAS_TRANSFER_BUF
 		p_spi->transfer(buf, NULL, len);
 #else
 		// TODO: copy 8 bytes at a time to cmd[] and block transfer
 		for (uint16_t i=0; i < len; i++) {
-			p_spi_ethernet->transfer(buf[i]);
+			Ethernet.p_spi_ethernet->transfer(buf[i]);
 		}
 #endif
 		resetSS();
@@ -366,15 +366,15 @@ uint16_t W5100Class::write(uint16_t addr, const uint8_t *buf, uint16_t len)
 			for (uint8_t i=0; i < len; i++) {
 				cmd[i + 3] = buf[i];
 			}
-			p_spi_ethernet->transfer(cmd, len + 3);
+			Ethernet.p_spi_ethernet->transfer(cmd, len + 3);
 		} else {
-			p_spi_ethernet->transfer(cmd, 3);
+			Ethernet.p_spi_ethernet->transfer(cmd, 3);
 #ifdef SPI_HAS_TRANSFER_BUF
 			p_spi->transfer(buf, NULL, len);
 #else
 			// TODO: copy 8 bytes at a time to cmd[] and block transfer
 			for (uint16_t i=0; i < len; i++) {
-				p_spi_ethernet->transfer(buf[i]);
+				Ethernet.p_spi_ethernet->transfer(buf[i]);
 			}
 #endif
 		}
@@ -391,11 +391,11 @@ uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 		for (uint16_t i=0; i < len; i++) {
 			setSS();
 			#if 1
-			p_spi_ethernet->transfer(0x0F);
-			p_spi_ethernet->transfer(addr >> 8);
-			p_spi_ethernet->transfer(addr & 0xFF);
+			Ethernet.p_spi_ethernet->transfer(0x0F);
+			Ethernet.p_spi_ethernet->transfer(addr >> 8);
+			Ethernet.p_spi_ethernet->transfer(addr & 0xFF);
 			addr++;
-			buf[i] = p_spi_ethernet->transfer(0);
+			buf[i] = Ethernet.p_spi_ethernet->transfer(0);
 			#else
 			cmd[0] = 0x0F;
 			cmd[1] = addr >> 8;
@@ -413,9 +413,9 @@ uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 		cmd[1] = addr & 0xFF;
 		cmd[2] = (len >> 8) & 0x7F;
 		cmd[3] = len & 0xFF;
-		p_spi_ethernet->transfer(cmd, 4);
+		Ethernet.p_spi_ethernet->transfer(cmd, 4);
 		memset(buf, 0, len);
-		p_spi_ethernet->transfer(buf, len);
+		Ethernet.p_spi_ethernet->transfer(buf, len);
 		resetSS();
 	} else { // chip == 55
 		setSS();
@@ -457,9 +457,9 @@ uint16_t W5100Class::read(uint16_t addr, uint8_t *buf, uint16_t len)
 			cmd[2] = ((addr >> 6) & 0xE0) | 0x18; // 2K buffers
 			#endif
 		}
-		p_spi_ethernet->transfer(cmd, 3);
+		Ethernet.p_spi_ethernet->transfer(cmd, 3);
 		memset(buf, 0, len);
-		p_spi_ethernet->transfer(buf, len);
+		Ethernet.p_spi_ethernet->transfer(buf, len);
 		resetSS();
 	}
 	return len;

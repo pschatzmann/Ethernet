@@ -53,6 +53,7 @@
 #include "Server.h"
 #include "Udp.h"
 #include "SPI.h"
+#include "utility/w5100.h"
 
 enum EthernetLinkStatus {
 	Unknown,
@@ -72,13 +73,16 @@ class EthernetClient;
 class EthernetServer;
 class DhcpClass;
 
-// support for instances other then the default SPI
-extern SPIClass *p_spi_ethernet;
 
 class EthernetClass {
 private:
 	static IPAddress _dnsServerAddress;
 	static DhcpClass* _dhcp;
+	// support for instances other then the default SPI
+	static SPIClass *p_spi_ethernet;
+	// configurable settings
+	static SPISettings spi_ethernet_settings;
+
 public:
 	// Initialise the Ethernet shield to use the provided MAC address and
 	// gain the rest of the configuration through DHCP.
@@ -94,7 +98,7 @@ public:
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway);
 	static void begin(uint8_t *mac, IPAddress ip, IPAddress dns, IPAddress gateway, IPAddress subnet);
 	static void init(uint8_t sspin = 10);
-	static void setSPI(SPIClass& spi, uint8_t sspin);
+	static void setSPI(SPIClass& spi, uint8_t sspin, SPISettings settings = SPI_ETHERNET_SETTINGS);
 
 	static void MACAddress(uint8_t *mac_address);
 	static IPAddress localIP();
@@ -113,6 +117,7 @@ public:
 	friend class EthernetClient;
 	friend class EthernetServer;
 	friend class EthernetUDP;
+	friend class W5100Class;
 private:
 	// Opens a socket(TCP or UDP or IP_RAW mode)
 	static uint8_t socketBegin(uint8_t protocol, uint16_t port);
